@@ -3,10 +3,6 @@
 #include <set>
 #include <cmath>
 
-// define global file to save the results
-// std::ofstream outfile ("debug.csv");
-// std::ofstream outfile ("output.csv");
-
 class DataCloud {
 public:
     // Constructor
@@ -60,33 +56,30 @@ public:
 
     void addPoints(const std::vector<int>& new_points) {
         points.insert(points.end(), new_points.begin(), new_points.end());
-        // n = points.size();
-        // remove duplicates
+
         std::sort(points.begin(), points.end());
         points.erase(std::unique(points.begin(), points.end()), points.end());
-        // n += new_points.size();
+
         n = points.size();
         
     }
 
     double calculate_force(const double point) const {
-        // Calcula a 'força' baseada na distância do ponto à média
-        double distance = std::abs(point - mean[0]);  // Assumindo que mean é um vetor de uma dimensão
-        // Em ForceAtlas, a força geralmente diminui com a distância
-        // Você pode experimentar com diferentes funções aqui
+        // Calculate the force of a point based on the distance to the mean
+        double distance = std::abs(point - mean[0]);  
+        // In ForceAtlas, the force usually decreases with distance
         double force = 1.0 / (1.0 + distance);
         return force;
     }
 
     void adjust_variance_with_force(const std::vector<double>& data) {
-        // Ajustar a variância com base na força
+        // Adjust the variance of the cloud based on the force of the points
         double total_force = 0.0;
         for (const auto& point : data) {
             total_force += calculate_force(point);
         }
 
-        // Ajustar a variância com base na força total
-        // Substitua com a implementação real
+        // Sum the force of the points to the variance
         var += total_force;
     }
 
@@ -138,7 +131,6 @@ public:
     }
 
     int getNumClouds() {
-        // return clouds.size();
         return 3;
     }
 
@@ -170,25 +162,20 @@ public:
 
     int runOnline(const std::vector<double>& data, int m, int numCloud = 3, bool isOutlier = false) {
         
-        index_point++; // Atualize o contador de linhas
+        index_point++;
 
         if (index_point == 1) {
-            // Crie a primeira nuvem de dados e adicione X
             createCloud(data, index_point);
-            // printf("Criando a primeira nuvem de dados.\n");
             return 0;
         }
         if (index_point == 2){
             createCloud(data, index_point);
-            // printf("Criando a segunda nuvem de dados.\n");
             return 1;
         } 
         if (index_point >= 3){
             
-            // Verifique se o vetor de clouds está cheio
             if (index_point == 3){
                 createCloud(data, index_point);
-                // std::cout << "Criando nova nuvem para o ponto: " << index_point << " - Quantidade de nuvens: " << clouds.size() + 1 << std::endl;
                 return 2;
             }
 
@@ -196,12 +183,11 @@ public:
             float maxTipycality = -std::numeric_limits<float>::infinity();
             int chosenCloud = -1;
             bool nothingCloud = true;
-            // alfa = std::vector<double>(getNumClouds(), 0.0);
 
             for (int i = 0; i < numCloud; i++) {
                 DataCloud& c = getCloud(i);
 
-                // Calcule as novas médias e variâncias se adicionássemos o ponto
+                // Calculate the eccentricity and normalized eccentricity
                 int test_n = c.getN() + 1;
                 std::vector<double> test_mean = c.getUpdatedMean(data);
                 double test_var = c.getUpdatedVarianceK3(data, test_mean);
@@ -216,9 +202,6 @@ public:
                 }
 
                 double eccentricity = (test_var + sum_diff_squared) / (test_n * test_var);
-
-                // Escreva a excentricidade no arquivo
-                // outfile << "Point: " << index_point << " eccentricity: " << eccentricity << std::endl;
 
                 double norm_eccentricity = eccentricity / 2.0;
                 // Calcule a tipicidade e tipicidade normalizada
@@ -295,6 +278,28 @@ public:
 
                 // add the point to the cloud
                 c.addPoint(index_point);
+            } else if (chosenCloud == -1){
+                double maxTipycality = -std::numeric_limits<double>::infinity();
+
+                for (int i = 0; i < numCloud; i++) {
+                    if (alfa[i] >= maxTipycality){
+                        maxTipycality = alfa[i];
+                        chosenCloud = i;
+                    }
+                }
+
+                // get chosen cloud
+                DataCloud& c = getCloud(chosenCloud);
+
+                std::vector<double> test_mean = c.getUpdatedMean(data);
+
+                double test_var = c.getUpdatedVarianceK3(data, test_mean);
+
+                // update the cloud stats
+                c.updateStats(test_mean, test_var);
+
+                // add the point to the cloud
+                c.addPoint(index_point);
             }
 
             return chosenCloud;
@@ -303,10 +308,6 @@ public:
 
 public:
     int index_point;
-    // std::vector<DataCloud> clouds(3);
-    // DataCloud clouds[3];  // Usando um array fixo
-    
-    // define a vector to store Dataclouds but wihtout initialize them
     std::vector<DataCloud> clouds;
     std::vector<std::vector<double>> classIndex;
     std::vector<int> argMax;

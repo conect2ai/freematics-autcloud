@@ -58,6 +58,7 @@ TEDACloud tedaCloud;
 int count = 0;
 int outlier_detection = 0;
 int reset = 0;
+int max_outlier_window = 4;
 std::vector<double> data_autocloud(2);
 typedef struct {
   float rpm;
@@ -332,7 +333,7 @@ void processOBD(CBuffer* buffer)
           gettimeofday(&teda_start, NULL);
           // run teda
           int flag = teda.run(result);
-          Serial.println("[TEDA] executou o teda");
+          Serial.println("[TEDA] TEDA executed");
           // end
           gettimeofday(&teda_end, NULL);
 
@@ -343,7 +344,7 @@ void processOBD(CBuffer* buffer)
             isOutlier = true;
           }
 
-          if (flag == 0 || outlier_detection == 4){
+          if (flag == 0 || outlier_detection == max_outlier_window){
             // start
             gettimeofday(&autocloud_start, NULL);
             int driver_index = tedaCloud.runOnline(data_autocloud, 2, 3, isOutlier);
@@ -355,7 +356,7 @@ void processOBD(CBuffer* buffer)
             float autocloud_time = (autocloud_end.tv_sec - autocloud_start.tv_sec) + (autocloud_end.tv_usec - autocloud_start.tv_usec) / 1000000.0;
             buffer->add(autocloud_time_flag, ELEMENT_FLOAT, &autocloud_time, sizeof(autocloud_time));
 
-            Serial.println("Index do driver: ");
+            Serial.println("Driver Index");
             Serial.println(driver_index);
 
             // Serial.println("Tempo do autocloud: ");
@@ -368,7 +369,7 @@ void processOBD(CBuffer* buffer)
             buffer->add(autocloud_time_flag, ELEMENT_FLOAT, &autocloud_time, sizeof(autocloud_time));
           }
 
-          if (outlier_detection == 4){
+          if (outlier_detection == max_outlier_window){
             outlier_detection = 0;
             reset += 1;
             // log reset
