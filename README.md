@@ -28,8 +28,6 @@ git clone https://github.com/conect2ai/freematics-autcloud.git
 
 ![alt text](./images/upload.png)
 
-Este repositório contém a implementação do algoritmo Autocloud para executar de forma online no Freematics One+.
-
 ## :computer: Algorithm configuration
 
 In the [telelogger.ino file](./firmware_v5/telelogger/telelogger.ino), you can customize the algorithms for your application. For example:
